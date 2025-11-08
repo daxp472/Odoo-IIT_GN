@@ -7,58 +7,80 @@ import { AuthRequest } from '../middleware/auth.middleware';
 /**
  * Register a new user
  */
-
-// @ts-ignore
 export const signup = asyncHandler(async (req: Request, res: Response) => {
-  const { email, password, full_name, role = 'team_member' } = req.body;
+  try {
+    const { email, password, full_name, role = 'team_member' } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({
-      success: false,
-      message: 'Email and password are required'
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and password are required'
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid email address'
+      });
+    }
+
+    // Sign up user with Supabase Auth
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name,
+          role
+        }
+      }
     });
-  }
 
-  // Sign up user with Supabase Auth
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        full_name,
-        role
+    if (error) {
+      console.error('Supabase signup error:', error);
+      return res.status(400).json({
+        success: false,
+        message: error.message
+      });
+    }
+
+    // Create profile record
+    if (data.user) {
+      const { error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .insert({
+          id: data.user.id,
+          email: data.user.email,
+          full_name,
+          role
+        });
+
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+        // Don't fail the signup if profile creation fails, but log it
       }
     }
-  });
 
-  if (error) {
-    return res.status(400).json({
+    res.status(201).json({
+      success: true,
+      message: 'User registered successfully',
+      user: {
+        id: data.user?.id,
+        email: data.user?.email,
+        full_name
+      }
+    });
+  } catch (error: any) {
+    console.error('Unexpected error in signup:', error);
+    return res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An unexpected error occurred during signup',
+      ...(process.env.NODE_ENV === 'development' && { error: error.message })
     });
   }
-
-  // Create profile record
-  if (data.user) {
-    await supabaseAdmin
-      .from('profiles')
-      .insert({
-        id: data.user.id,
-        email: data.user.email,
-        full_name,
-        role
-      });
-  }
-
-  res.status(201).json({
-    success: true,
-    message: 'User registered successfully',
-    user: {
-      id: data.user?.id,
-      email: data.user?.email,
-      full_name
-    }
-  });
 });
 
 /**

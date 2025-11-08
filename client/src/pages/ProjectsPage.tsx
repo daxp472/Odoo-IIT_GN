@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { FiPlus, FiSearch } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiChevronRight } from 'react-icons/fi';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { ProjectCard } from '../components/projects/ProjectCard';
 import { Modal } from '../components/ui/Modal';
+import { MultiSelect } from '../components/ui/MultiSelect';
+import { RadioGroup } from '../components/ui/RadioGroup';
+import { ImageUpload } from '../components/ui/ImageUpload';
 import { useApp } from '../context/AppContext';
 import { Project } from '../types';
 
@@ -15,11 +18,12 @@ export const ProjectsPage: React.FC = () => {
   const [editingProject, setEditingProject] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
-    client: '',
-    startDate: '',
-    endDate: '',
     description: '',
-    tags: ''
+    tags: [] as string[],
+    projectManager: '',
+    deadline: '',
+    priority: 'medium',
+    images: [] as string[],
   });
 
   const filteredProjects = projects.filter(project =>
@@ -36,11 +40,12 @@ export const ProjectsPage: React.FC = () => {
     setEditingProject(project.id);
     setFormData({
       name: project.name,
-      client: project.client,
-      startDate: project.startDate,
-      endDate: project.endDate,
       description: project.description,
-      tags: project.tags.join(', ')
+      tags: project.tags,
+      projectManager: project.managerImage,
+      deadline: project.deadline || '',
+      priority: 'medium', // Set default or get from project if you add this field
+      images: project.images || [],
     });
     setIsModalOpen(true);
   };
@@ -55,10 +60,10 @@ export const ProjectsPage: React.FC = () => {
       expenses: editingProject ? projects.find(p => p.id === editingProject)?.expenses || 0 : 0,
       profit: editingProject ? projects.find(p => p.id === editingProject)?.profit || 0 : 0,
       status: editingProject ? projects.find(p => p.id === editingProject)?.status || 'active' : 'active' as const,
-      tags: formData.tags ? formData.tags.split(',').filter(t => t.trim()).map(t => t.trim()) : [],
-      images: editingProject ? projects.find(p => p.id === editingProject)?.images || [] : [],
-      managerImage: editingProject ? projects.find(p => p.id === editingProject)?.managerImage || '' : '',
-      deadline: formData.endDate || null,
+      managerImage: formData.projectManager,
+      startDate: new Date().toISOString().split('T')[0], // Set current date as start date
+      endDate: formData.deadline,
+      client: editingProject ? projects.find(p => p.id === editingProject)?.client || '' : '',
       tasksCount: editingProject ? projects.find(p => p.id === editingProject)?.tasksCount || 0 : 0
     };
 
@@ -72,11 +77,12 @@ export const ProjectsPage: React.FC = () => {
     setIsModalOpen(false);
     setFormData({
       name: '',
-      client: '',
-      startDate: '',
-      endDate: '',
       description: '',
-      tags: ''
+      tags: [],
+      projectManager: '',
+      deadline: '',
+      priority: 'medium',
+      images: []
     });
   };
 
@@ -128,9 +134,19 @@ export const ProjectsPage: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={editingProject ? "Edit Project" : "Create New Project"}
+        size="2xl"
         size="lg"
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+        <span>Projects</span>
+        <FiChevronRight className="w-4 h-4" />
+        <span className="font-medium text-gray-900">
+          {editingProject ? 'Edit Project' : 'New Project'}
+        </span>
+      </div>
+
+      <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-6">
+        <div className="space-y-4">
           <Input
             label="Project Name"
             name="name"
@@ -139,69 +155,87 @@ export const ProjectsPage: React.FC = () => {
             required
           />
           
-          <Input
-            label="Client"
-            name="client"
-            value={formData.client}
-            onChange={handleInputChange}
-            required
+          <MultiSelect
+            label="Tags"
+            options={[
+              { value: 'development', label: 'Development' },
+              { value: 'design', label: 'Design' },
+              { value: 'marketing', label: 'Marketing' },
+              { value: 'research', label: 'Research' }
+            ]}
+            value={formData.tags}
+            onChange={(tags) => setFormData(prev => ({ ...prev, tags }))}
           />
           
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Start Date"
-              name="startDate"
-              type="date"
-              value={formData.startDate}
-              onChange={handleInputChange}
-              required
-            />
-            
-            <Input
-              label="End Date"
-              name="endDate"
-              type="date"
-              value={formData.endDate}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
+          <Input
+            type="date"
+            label="Deadline"
+            name="deadline"
+            value={formData.deadline}
+            onChange={handleInputChange}
+          />
+        </div>
+
+        <div className="space-y-4">
+          <MultiSelect
+            label="Project Manager"
+            options={[
+              { value: '/avatars/user1.jpg', label: 'John Doe' },
+              { value: '/avatars/user2.jpg', label: 'Jane Smith' },
+              { value: '/avatars/user3.jpg', label: 'Mike Johnson' }
+            ]}
+            value={[formData.projectManager]}
+            onChange={(managers) => setFormData(prev => ({ ...prev, projectManager: managers[0] }))}
+          />
           
+          <RadioGroup
+            label="Priority"
+            options={[
+              { value: 'low', label: 'Low' },
+              { value: 'medium', label: 'Medium' },
+              { value: 'high', label: 'High' }
+            ]}
+            value={formData.priority}
+            onChange={(priority) => setFormData(prev => ({ ...prev, priority }))}
+            horizontal
+          />
+
+          <ImageUpload
+            label="Project Images"
+            images={formData.images}
+            onChange={(images) => setFormData(prev => ({ ...prev, images }))}
+          />
+        </div>
+
+        <div className="md:col-span-2">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Description
             </label>
             <textarea
               name="description"
-              rows={3}
+              rows={4}
               className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
               value={formData.description}
               onChange={handleInputChange}
               placeholder="Project description..."
             />
           </div>
+        </div>
 
-          <Input
-            label="Tags (comma separated)"
-            name="tags"
-            placeholder="Example: Services, Customer Care"
-            value={formData.tags}
-            onChange={handleInputChange}
-          />
-          
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsModalOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit">
-              {editingProject ? 'Save Changes' : 'Create Project'}
-            </Button>
-          </div>
-        </form>
+        <div className="md:col-span-2 flex justify-between pt-4 border-t">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsModalOpen(false)}
+          >
+            Discard
+          </Button>
+          <Button type="submit">
+            {editingProject ? 'Save Changes' : 'Save'}
+          </Button>
+        </div>
+      </form>
       </Modal>
     </Layout>
   );

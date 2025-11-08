@@ -17,6 +17,7 @@ export interface Project {
   expenses: number;
   profit: number;
   status: 'active' | 'completed' | 'on-hold';
+  priority: 'low' | 'medium' | 'high';
   thumbnail?: string;
   tags: string[];
   images: string[];

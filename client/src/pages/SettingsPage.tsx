@@ -45,7 +45,7 @@ export const SettingsPage: React.FC = () => {
 
   const handleRoleRequestAction = async (id: string, status: 'approved' | 'rejected') => {
     try {
-      const response = await roleRequestsAPI.updateStatus(id, status);
+      const response = await roleRequestsAPI.update(id, { status });
       if (response.success) {
         // Refresh role requests
         await fetchRoleRequests();

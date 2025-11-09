@@ -6,7 +6,8 @@ import { salesSchemas } from './schemas/sales.schema';
 import { purchaseSchemas } from './schemas/purchase.schema';
 import { expenseSchemas } from './schemas/expense.schema';
 import { invoiceSchemas } from './schemas/invoice.schema';
-import { roleRequestSchemas } from './schemas/roleRequest.schema'; // Add role request schemas
+import { roleRequestSchemas } from './schemas/roleRequest.schema';
+import { productSchemas } from './schemas/product.schema'; // Add product schemas
 
 const options = {
   definition: {
@@ -46,7 +47,8 @@ const options = {
         ...purchaseSchemas,
         ...expenseSchemas,
         ...invoiceSchemas,
-        ...roleRequestSchemas // Add role request schemas
+        ...roleRequestSchemas,
+        ...productSchemas // Add product schemas
       }
     },
     security: [

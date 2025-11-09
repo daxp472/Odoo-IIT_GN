@@ -16,6 +16,7 @@ import { PurchasesPage } from './pages/PurchasesPage';
 import { ExpensesPage } from './pages/ExpensesPage';
 import { InvoicesPage } from './pages/InvoicesPage';
 import { TimesheetsPage } from './pages/TimesheetsPage';
+import { ProductsPage } from './pages/ProductsPage';
 
 function App() {
   return (
@@ -54,6 +55,12 @@ function App() {
             <Route path="/role-request" element={
               <ProtectedRoute>
                 <RoleRequestPage />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/products" element={
+              <ProtectedRoute>
+                <ProductsPage />
               </ProtectedRoute>
             } />
             

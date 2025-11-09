@@ -17,7 +17,8 @@ import purchaseRoutes from './routes/purchase.routes';
 import expenseRoutes from './routes/expense.routes';
 import invoiceRoutes from './routes/invoice.routes';
 import dashboardRoutes from './routes/dashboard.routes';
-import roleRequestRoutes from './routes/roleRequest.routes'; // Add role request routes
+import roleRequestRoutes from './routes/roleRequest.routes';
+import productRoutes from './routes/product.routes'; // Add product routes
 
 // Load environment variables
 dotenv.config();
@@ -78,7 +79,8 @@ app.use('/api/purchases', purchaseRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/role-requests', roleRequestRoutes); // Add role request routes
+app.use('/api/role-requests', roleRequestRoutes);
+app.use('/api/products', productRoutes); // Add product routes
 
 // 404 handler
 app.use('*', (req, res) => {

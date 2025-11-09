@@ -1,30 +1,37 @@
-// Define backend data structures
 interface BackendProject {
+  id: string;
   name: string;
   client: string;
   start_date: string;
-  end_date?: string;
-  budget: number;
-  status: 'planning' | 'in_progress' | 'completed' | 'on_hold' | 'cancelled';
-  description?: string;
-  revenue?: number;
-  cost?: number;
-  profit?: number;
+  end_date: string;
+  description: string;
+  progress: number;
+  revenue: number;
+  expenses: number;
+  profit: number;
+  status: 'active' | 'completed' | 'on-hold';
+  priority: 'low' | 'medium' | 'high';
+  thumbnail?: string;
+  tags: string[];
+  images: string[];
+  managerImage: string;
+  deadline: string | null;
+  tasksCount: number;
 }
 
 interface BackendTask {
-  title: string;
-  description?: string;
-  project_id?: string;
-  assigned_to?: string;
-  status: 'todo' | 'in_progress' | 'review' | 'completed';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  estimated_hours?: number;
-  actual_hours?: number;
-  due_date?: string;
+  id: string;
+  name: string;
+  assignee: string;
+  project_id: string;
+  description: string;
+  deadline: string;
+  status: 'todo' | 'in-progress' | 'done';
+  priority: 'low' | 'medium' | 'high';
 }
 
 interface BackendSalesOrder {
+  id: string;
   order_number: string;
   client: string;
   project_id?: string;
@@ -33,9 +40,13 @@ interface BackendSalesOrder {
   order_date: string;
   delivery_date?: string;
   description?: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
 }
 
 interface BackendPurchase {
+  id: string;
   purchase_number: string;
   vendor: string;
   project_id?: string;
@@ -44,9 +55,13 @@ interface BackendPurchase {
   order_date: string;
   delivery_date?: string;
   description?: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
 }
 
 interface BackendExpense {
+  id: string;
   title: string;
   amount: number;
   category: string;
@@ -55,9 +70,13 @@ interface BackendExpense {
   receipt_url?: string;
   expense_date: string;
   approved?: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
 }
 
 interface BackendInvoice {
+  id: string;
   invoice_number: string;
   client: string;
   project_id?: string;
@@ -68,9 +87,13 @@ interface BackendInvoice {
   issue_date: string;
   due_date: string;
   description?: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
 }
 
 interface BackendTimesheet {
+  id: string;
   user_id?: string;
   project_id?: string;
   task_id?: string;
@@ -80,6 +103,26 @@ interface BackendTimesheet {
   date: string;
   billable?: boolean;
   approved?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface BackendProduct {
+  id: string;
+  name: string;
+  description?: string;
+  category?: string;
+  unit_price: number;
+  currency: string;
+  sku?: string;
+  barcode?: string;
+  unit_of_measure: string;
+  tax_rate: number;
+  is_active: boolean;
+  image_url?: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
 }
 
 const API_BASE_URL = 'http://localhost:5000/api';
@@ -107,32 +150,36 @@ export const authAPI = {
     return response.json();
   },
   
-  signup: async (userData: { full_name: string; email: string; password: string }) => {
+  signup: async (userData: { email: string; password: string; full_name: string }) => {
     const response = await fetch(`${API_BASE_URL}/auth/signup`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        ...userData,
-        role: 'team_member' // Default role is always team_member
-      }),
+      body: JSON.stringify(userData),
     });
     
     return response.json();
   },
   
   logout: async () => {
-    const response = await fetch(`${API_BASE_URL}/auth/logout`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-    });
-    
-    return response.json();
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
   },
   
   getProfile: async () => {
     const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      headers: getAuthHeaders(),
+    });
+    
+    return response.json();
+  }
+};
+
+// Dashboard API
+export const dashboardAPI = {
+  getStats: async () => {
+    const response = await fetch(`${API_BASE_URL}/dashboard/stats`, {
       headers: getAuthHeaders(),
     });
     
@@ -190,21 +237,16 @@ export const projectsAPI = {
 
 // Tasks API
 export const tasksAPI = {
-  getAll: async (projectId?: string) => {
-    let url = `${API_BASE_URL}/tasks`;
-    if (projectId) {
-      url += `?project_id=${projectId}`;
-    }
-    
-    const response = await fetch(url, {
+  getAll: async () => {
+    const response = await fetch(`${API_BASE_URL}/tasks`, {
       headers: getAuthHeaders(),
     });
     
     return response.json();
   },
   
-  getById: async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/tasks/${id}`, {
+  getByProjectId: async (projectId: string) => {
+    const response = await fetch(`${API_BASE_URL}/tasks?project_id=${projectId}`, {
       headers: getAuthHeaders(),
     });
     
@@ -259,21 +301,21 @@ export const salesAPI = {
     return response.json();
   },
   
-  create: async (salesData: BackendSalesOrder) => {
+  create: async (salesOrderData: BackendSalesOrder) => {
     const response = await fetch(`${API_BASE_URL}/sales`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify(salesData),
+      body: JSON.stringify(salesOrderData),
     });
     
     return response.json();
   },
   
-  update: async (id: string, salesData: Partial<BackendSalesOrder>) => {
+  update: async (id: string, salesOrderData: Partial<BackendSalesOrder>) => {
     const response = await fetch(`${API_BASE_URL}/sales/${id}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
-      body: JSON.stringify(salesData),
+      body: JSON.stringify(salesOrderData),
     });
     
     return response.json();
@@ -403,17 +445,17 @@ export const invoicesAPI = {
     return response.json();
   },
   
-  create: async (invoiceData: BackendInvoice) => {
+  create: async (invoiceData: Omit<BackendInvoice, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'total_amount'>) => {
     const response = await fetch(`${API_BASE_URL}/invoices`, {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(),  
       body: JSON.stringify(invoiceData),
     });
     
     return response.json();
   },
   
-  update: async (id: string, invoiceData: Partial<BackendInvoice>) => {
+  update: async (id: string, invoiceData: Partial<Omit<BackendInvoice, 'id' | 'created_at' | 'updated_at' | 'created_by'>>) => {
     const response = await fetch(`${API_BASE_URL}/invoices/${id}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
@@ -430,6 +472,22 @@ export const invoicesAPI = {
     });
     
     return response.json();
+  },
+  
+  generatePDF: async (id: string) => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/invoices/${id}/pdf`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+    }
+    
+    return response.blob();
   }
 };
 
@@ -481,31 +539,47 @@ export const timesheetsAPI = {
   }
 };
 
-// Dashboard API
-export const dashboardAPI = {
-  getOverview: async () => {
-    const response = await fetch(`${API_BASE_URL}/dashboard/overview`, {
+// Products API
+export const productsAPI = {
+  getAll: async () => {
+    const response = await fetch(`${API_BASE_URL}/products`, {
       headers: getAuthHeaders(),
     });
     
     return response.json();
   },
   
-  getFinancials: async () => {
-    const response = await fetch(`${API_BASE_URL}/dashboard/financials`, {
+  getById: async (id: string) => {
+    const response = await fetch(`${API_BASE_URL}/products/${id}`, {
       headers: getAuthHeaders(),
     });
     
     return response.json();
   },
   
-  getUserStats: async (userId?: string) => {
-    let url = `${API_BASE_URL}/dashboard/user-stats`;
-    if (userId) {
-      url += `?user_id=${userId}`;
-    }
+  create: async (productData: Omit<BackendProduct, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => {
+    const response = await fetch(`${API_BASE_URL}/products`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(productData),
+    });
     
-    const response = await fetch(url, {
+    return response.json();
+  },
+  
+  update: async (id: string, productData: Partial<Omit<BackendProduct, 'id' | 'created_at' | 'updated_at' | 'created_by'>>) => {
+    const response = await fetch(`${API_BASE_URL}/products/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(productData),
+    });
+    
+    return response.json();
+  },
+  
+  delete: async (id: string) => {
+    const response = await fetch(`${API_BASE_URL}/products/${id}`, {
+      method: 'DELETE',
       headers: getAuthHeaders(),
     });
     
@@ -523,6 +597,14 @@ export const roleRequestsAPI = {
     return response.json();
   },
   
+  getMyRequests: async () => {
+    const response = await fetch(`${API_BASE_URL}/role-requests/my`, {
+      headers: getAuthHeaders(),
+    });
+    
+    return response.json();
+  },
+  
   create: async (requestData: { requested_role: string; reason: string }) => {
     const response = await fetch(`${API_BASE_URL}/role-requests`, {
       method: 'POST',
@@ -533,11 +615,11 @@ export const roleRequestsAPI = {
     return response.json();
   },
   
-  updateStatus: async (id: string, status: 'approved' | 'rejected') => {
+  update: async (id: string, requestData: { status: 'approved' | 'rejected' }) => {
     const response = await fetch(`${API_BASE_URL}/role-requests/${id}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ status }),
+      body: JSON.stringify(requestData),
     });
     
     return response.json();

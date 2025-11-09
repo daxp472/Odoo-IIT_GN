@@ -1,5 +1,6 @@
 import express from 'express';
 import { 
+  getStats,
   getOverview, 
   getFinancials, 
   getUserStats 
@@ -8,6 +9,39 @@ import { verifyToken } from '../middleware/auth.middleware';
 import { isAdminOrPM } from '../middleware/rbac.middleware';
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * /api/dashboard/stats:
+ *   get:
+ *     tags:
+ *       - Dashboard
+ *     summary: Get dashboard statistics
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Dashboard statistics retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 stats:
+ *                   type: object
+ *                   properties:
+ *                     totalProjects:
+ *                       type: number
+ *                     totalRevenue:
+ *                       type: number
+ *                     totalExpenses:
+ *                       type: number
+ *                     totalProfit:
+ *                       type: number
+ */
+router.get('/stats', verifyToken, isAdminOrPM, getStats);
 
 /**
  * @swagger

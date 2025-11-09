@@ -67,11 +67,13 @@ export const InvoicesPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // Calculate total amount
-      const total_amount = formData.amount + formData.tax_amount;
-      
       if (editingInvoice) {
-        const response = await invoicesAPI.update(editingInvoice.id, { ...formData, total_amount });
+        // For updates, we might need to send total_amount
+        const updateData = { 
+          ...formData,
+          total_amount: formData.amount + formData.tax_amount
+        };
+        const response = await invoicesAPI.update(editingInvoice.id, updateData);
         if (response.success) {
           await fetchInvoices();
           setIsModalOpen(false);
@@ -81,7 +83,8 @@ export const InvoicesPage: React.FC = () => {
           alert(response.message || 'Failed to update invoice');
         }
       } else {
-        const response = await invoicesAPI.create({ ...formData, total_amount });
+        // For creation, total_amount is calculated on the backend
+        const response = await invoicesAPI.create(formData);
         if (response.success) {
           await fetchInvoices();
           setIsModalOpen(false);
@@ -125,6 +128,30 @@ export const InvoicesPage: React.FC = () => {
         console.error('Failed to delete invoice:', error);
         alert('Failed to delete invoice. Please try again.');
       }
+    }
+  };
+
+  const handleDownloadPDF = async (id: string, invoiceNumber: string) => {
+    try {
+      const blob = await invoicesAPI.generatePDF(id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoice-${invoiceNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download PDF:', error);
+      // Try to parse the error message
+      let errorMessage = 'Failed to download PDF. Please try again.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      alert(errorMessage);
     }
   };
 
@@ -228,6 +255,12 @@ export const InvoicesPage: React.FC = () => {
                       {new Date(invoice.due_date).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button
+                        onClick={() => handleDownloadPDF(invoice.id, invoice.invoice_number)}
+                        className="text-blue-600 hover:text-blue-900 mr-3"
+                      >
+                        PDF
+                      </button>
                       <button
                         onClick={() => handleEdit(invoice)}
                         className="text-purple-600 hover:text-purple-900 mr-3"

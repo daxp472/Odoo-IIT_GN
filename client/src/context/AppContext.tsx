@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Project, Task, DashboardStats, SalesOrder, Purchase, Expense, Invoice, Timesheet } from '../types';
-import { projectsAPI, tasksAPI, dashboardAPI, salesAPI, purchasesAPI, expensesAPI, invoicesAPI, timesheetsAPI } from '../services/api';
+import { Project, Task, DashboardStats, SalesOrder, Purchase, Expense, Invoice, Timesheet, Product } from '../types';
+import { projectsAPI, tasksAPI, dashboardAPI, salesAPI, purchasesAPI, expensesAPI, invoicesAPI, timesheetsAPI, productsAPI } from '../services/api';
 import { useAuth } from './AuthContext';
 
 // Define backend response types
@@ -37,6 +37,24 @@ interface BackendTaskResponse {
   created_by: string;
 }
 
+interface BackendProductResponse {
+  id: string;
+  name: string;
+  description?: string;
+  category?: string;
+  unit_price: number;
+  currency: string;
+  sku?: string;
+  barcode?: string;
+  unit_of_measure: string;
+  tax_rate: number;
+  is_active: boolean;
+  image_url?: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+}
+
 interface AppContextType {
   projects: Project[];
   tasks: Task[];
@@ -45,6 +63,7 @@ interface AppContextType {
   expenses: Expense[];
   invoices: Invoice[];
   timesheets: Timesheet[];
+  products: Product[];
   dashboardStats: DashboardStats;
   selectedProject: Project | null;
   setSelectedProject: (project: Project | null) => void;
@@ -69,6 +88,9 @@ interface AppContextType {
   addTimesheet: (timesheet: Omit<Timesheet, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
   updateTimesheet: (id: string, timesheet: Partial<Timesheet>) => Promise<void>;
   deleteTimesheet: (id: string) => Promise<void>;
+  addProduct: (product: Omit<Product, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => Promise<void>;
+  updateProduct: (id: string, product: Partial<Product>) => Promise<void>;
+  deleteProduct: (id: string) => Promise<void>;
   refreshData: () => Promise<void>;
   isLoading: boolean;
 }
@@ -91,6 +113,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [timesheets, setTimesheets] = useState<Timesheet[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
     totalProjects: 0,
     totalRevenue: 0,
@@ -114,6 +137,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setExpenses([]);
       setInvoices([]);
       setTimesheets([]);
+      setProducts([]);
       setDashboardStats({
         totalProjects: 0,
         totalRevenue: 0,
@@ -203,14 +227,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setTimesheets(timesheetsResponse.timesheets || []);
       }
       
+      // Fetch products
+      const productsResponse = await productsAPI.getAll();
+      if (productsResponse.success) {
+        // Map backend product data to frontend product data
+        const mappedProducts = productsResponse.products.map((product: BackendProductResponse) => ({
+          id: product.id,
+          name: product.name,
+          description: product.description || '',
+          category: product.category || '',
+          unit_price: product.unit_price,
+          currency: product.currency,
+          sku: product.sku || '',
+          barcode: product.barcode || '',
+          unit_of_measure: product.unit_of_measure,
+          tax_rate: product.tax_rate,
+          is_active: product.is_active,
+          image_url: product.image_url || '',
+          created_at: product.created_at,
+          updated_at: product.updated_at,
+          created_by: product.created_by
+        }));
+        setProducts(mappedProducts);
+      }
+      
       // Fetch dashboard stats
-      const dashboardResponse = await dashboardAPI.getOverview();
-      if (dashboardResponse.success) {
+      const statsResponse = await dashboardAPI.getStats();
+      if (statsResponse.success) {
         setDashboardStats({
-          totalProjects: dashboardResponse.overview.total_projects || 0,
-          totalRevenue: dashboardResponse.overview.total_revenue || 0,
-          totalExpenses: dashboardResponse.overview.total_costs || 0,
-          totalProfit: dashboardResponse.overview.total_profit || 0
+          totalProjects: statsResponse.stats.totalProjects,
+          totalRevenue: statsResponse.stats.totalRevenue,
+          totalExpenses: statsResponse.stats.totalExpenses,
+          totalProfit: statsResponse.stats.totalProfit
         });
       }
     } catch (error) {
@@ -220,6 +268,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // Project CRUD operations
   const addProject = async (projectData: Omit<Project, 'id'>) => {
     try {
       // Map frontend project data to backend project data
@@ -228,9 +277,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         client: projectData.client,
         start_date: projectData.startDate,
         end_date: projectData.endDate,
-        budget: 0, // Default budget
-        status: 'planning' as const,
-        description: projectData.description
+        description: projectData.description,
+        budget: projectData.revenue, // Using revenue as budget for now
+        status: projectData.status === 'active' ? 'in_progress' : 
+                projectData.status === 'completed' ? 'completed' : 'on_hold',
+        progress: 0,
+        revenue: 0,
+        expenses: 0,
+        profit: 0,
+        tags: [],
+        images: [],
+        managerImage: '',
+        deadline: projectData.endDate || null,
+        tasksCount: 0
       };
       
       const response = await projectsAPI.create(backendProjectData);
@@ -248,24 +307,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateProject = async (id: string, projectData: Partial<Project>) => {
     try {
       // Map frontend project data to backend project data
-      const backendProjectData: {
-        name?: string;
-        client?: string;
-        start_date?: string;
-        end_date?: string;
-        budget?: number;
-        status?: 'planning' | 'in_progress' | 'completed' | 'on_hold' | 'cancelled';
-        description?: string;
-        revenue?: number;
-        cost?: number;
-        profit?: number;
-      } = {};
-      
-      if (projectData.name) backendProjectData.name = projectData.name;
-      if (projectData.client) backendProjectData.client = projectData.client;
-      if (projectData.startDate) backendProjectData.start_date = projectData.startDate;
-      if (projectData.endDate) backendProjectData.end_date = projectData.endDate;
-      if (projectData.description) backendProjectData.description = projectData.description;
+      const backendProjectData: any = {};
+      if (projectData.name !== undefined) backendProjectData.name = projectData.name;
+      if (projectData.client !== undefined) backendProjectData.client = projectData.client;
+      if (projectData.startDate !== undefined) backendProjectData.start_date = projectData.startDate;
+      if (projectData.endDate !== undefined) backendProjectData.end_date = projectData.endDate;
+      if (projectData.description !== undefined) backendProjectData.description = projectData.description;
+      if (projectData.revenue !== undefined) backendProjectData.budget = projectData.revenue;
+      if (projectData.status !== undefined) {
+        backendProjectData.status = projectData.status === 'active' ? 'in_progress' : 
+                                   projectData.status === 'completed' ? 'completed' : 'on_hold';
+      }
       
       const response = await projectsAPI.update(id, backendProjectData);
       if (response.success) {
@@ -293,6 +345,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // Task CRUD operations
   const addTask = async (taskData: Omit<Task, 'id'>) => {
     try {
       // Map frontend task data to backend task data
@@ -302,9 +355,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         project_id: taskData.projectId,
         status: taskData.status === 'in-progress' ? 'in_progress' : 
                 taskData.status === 'done' ? 'completed' : 'todo',
-        priority: taskData.priority,
-        due_date: taskData.deadline
-      } as const;
+        priority: taskData.priority === 'high' ? 'urgent' : taskData.priority,
+        due_date: taskData.deadline,
+        name: taskData.name,
+        assignee: '',
+        deadline: taskData.deadline
+      };
       
       const response = await tasksAPI.create(backendTaskData);
       if (response.success) {
@@ -321,26 +377,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateTask = async (id: string, taskData: Partial<Task>) => {
     try {
       // Map frontend task data to backend task data
-      const backendTaskData: {
-        title?: string;
-        description?: string;
-        project_id?: string;
-        status?: 'todo' | 'in_progress' | 'review' | 'completed';
-        priority?: 'low' | 'medium' | 'high' | 'urgent';
-        estimated_hours?: number;
-        actual_hours?: number;
-        due_date?: string;
-      } = {};
-      
-      if (taskData.name) backendTaskData.title = taskData.name;
-      if (taskData.description) backendTaskData.description = taskData.description;
-      if (taskData.projectId) backendTaskData.project_id = taskData.projectId;
-      if (taskData.status) {
+      const backendTaskData: any = {};
+      if (taskData.name !== undefined) backendTaskData.title = taskData.name;
+      if (taskData.description !== undefined) backendTaskData.description = taskData.description;
+      if (taskData.projectId !== undefined) backendTaskData.project_id = taskData.projectId;
+      if (taskData.status !== undefined) {
         backendTaskData.status = taskData.status === 'in-progress' ? 'in_progress' : 
                                 taskData.status === 'done' ? 'completed' : 'todo';
       }
-      if (taskData.priority) backendTaskData.priority = taskData.priority;
-      if (taskData.deadline) backendTaskData.due_date = taskData.deadline;
+      if (taskData.priority !== undefined) {
+        backendTaskData.priority = taskData.priority === 'high' ? 'urgent' : taskData.priority;
+      }
+      if (taskData.deadline !== undefined) backendTaskData.due_date = taskData.deadline;
       
       const response = await tasksAPI.update(id, backendTaskData);
       if (response.success) {
@@ -368,9 +416,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // Sales Order CRUD operations
   const addSalesOrder = async (salesOrderData: Omit<SalesOrder, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => {
     try {
-      const response = await salesAPI.create(salesOrderData);
+      const backendData = {
+        ...salesOrderData,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: user?.id || ''
+      };
+      
+      const response = await salesAPI.create(backendData);
       if (response.success) {
         await refreshData();
       } else {
@@ -410,9 +466,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // Purchase CRUD operations
   const addPurchase = async (purchaseData: Omit<Purchase, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => {
     try {
-      const response = await purchasesAPI.create(purchaseData);
+      const backendData = {
+        ...purchaseData,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: user?.id || ''
+      };
+      
+      const response = await purchasesAPI.create(backendData);
       if (response.success) {
         await refreshData();
       } else {
@@ -452,9 +516,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // Expense CRUD operations
   const addExpense = async (expenseData: Omit<Expense, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => {
     try {
-      const response = await expensesAPI.create(expenseData);
+      const backendData = {
+        ...expenseData,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: user?.id || ''
+      };
+      
+      const response = await expensesAPI.create(backendData);
       if (response.success) {
         await refreshData();
       } else {
@@ -494,9 +566,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // Invoice CRUD operations
   const addInvoice = async (invoiceData: Omit<Invoice, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => {
     try {
-      const response = await invoicesAPI.create(invoiceData);
+      const backendData = {
+        ...invoiceData,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: user?.id || ''
+      };
+      
+      const response = await invoicesAPI.create(backendData);
       if (response.success) {
         await refreshData();
       } else {
@@ -536,9 +616,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // Timesheet CRUD operations
   const addTimesheet = async (timesheetData: Omit<Timesheet, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      const response = await timesheetsAPI.create(timesheetData);
+      const backendData = {
+        ...timesheetData,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      const response = await timesheetsAPI.create(backendData);
       if (response.success) {
         await refreshData();
       } else {
@@ -578,6 +665,73 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // Product CRUD operations
+  const addProduct = async (productData: Omit<Product, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => {
+    try {
+      // Ensure proper data types
+      const backendData = {
+        ...productData,
+        unit_price: Number(productData.unit_price),
+        tax_rate: Number(productData.tax_rate),
+        is_active: productData.is_active !== undefined ? productData.is_active : true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: user?.id || ''
+      };
+      
+      const response = await productsAPI.create(backendData);
+      if (response.success) {
+        await refreshData();
+      } else {
+        throw new Error(response.message || 'Failed to create product');
+      }
+    } catch (error: any) {
+      console.error('Failed to create product:', error);
+      // Handle the "Too many requests" error specifically
+      if (error.message && error.message.includes('Too many requests')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
+  };
+
+  const updateProduct = async (id: string, productData: Partial<Product>) => {
+    try {
+      // Ensure proper data types for numeric fields
+      const backendData: Partial<Product> = { ...productData };
+      if (productData.unit_price !== undefined) {
+        backendData.unit_price = Number(productData.unit_price);
+      }
+      if (productData.tax_rate !== undefined) {
+        backendData.tax_rate = Number(productData.tax_rate);
+      }
+      
+      const response = await productsAPI.update(id, backendData);
+      if (response.success) {
+        await refreshData();
+      } else {
+        throw new Error(response.message || 'Failed to update product');
+      }
+    } catch (error: any) {
+      console.error('Failed to update product:', error);
+      throw error;
+    }
+  };
+
+  const deleteProduct = async (id: string) => {
+    try {
+      const response = await productsAPI.delete(id);
+      if (response.success) {
+        await refreshData();
+      } else {
+        throw new Error(response.message || 'Failed to delete product');
+      }
+    } catch (error) {
+      console.error('Failed to delete product:', error);
+      throw error;
+    }
+  };
+
   return (
     <AppContext.Provider value={{
       projects,
@@ -587,6 +741,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       expenses,
       invoices,
       timesheets,
+      products,
       dashboardStats,
       selectedProject,
       setSelectedProject,
@@ -611,6 +766,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addTimesheet,
       updateTimesheet,
       deleteTimesheet,
+      addProduct,
+      updateProduct,
+      deleteProduct,
       refreshData,
       isLoading
     }}>

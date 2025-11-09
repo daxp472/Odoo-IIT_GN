@@ -3,6 +3,7 @@ import { supabase } from '../config/supabaseClient';
 import { asyncHandler } from '../utils/errorHandler';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { CreateInvoiceRequest, UpdateInvoiceRequest } from '../models/invoice.model';
+import { generateInvoicePDF as createInvoicePDF } from '../services/pdf.service';
 
 /**
  * Get all invoices
@@ -149,4 +150,57 @@ export const deleteInvoice = asyncHandler(async (req: AuthRequest, res: Response
     success: true,
     message: 'Invoice deleted successfully'
   });
+});
+
+/**
+ * Generate PDF for invoice
+ */
+export const generateInvoicePDF = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+
+  // Fetch invoice with line items
+  const { data: invoice, error: invoiceError } = await supabase
+    .from('invoices')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (invoiceError || !invoice) {
+    return res.status(404).json({
+      success: false,
+      message: 'Invoice not found'
+    });
+  }
+
+  // Fetch invoice lines
+  const { data: lines, error: linesError } = await supabase
+    .from('invoice_lines')
+    .select('*')
+    .eq('invoice_id', id);
+
+  if (linesError) {
+    console.error('Invoice lines fetch error:', linesError);
+    return res.status(400).json({
+      success: false,
+      message: 'Failed to fetch invoice lines: ' + linesError.message
+    });
+  }
+
+  // Generate PDF
+  try {
+    const pdfBuffer = await createInvoicePDF({ ...invoice, lines });
+    
+    // Set response headers for PDF download
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=invoice-${invoice.invoice_number}.pdf`);
+    
+    // Send PDF buffer
+    res.send(pdfBuffer);
+  } catch (error: any) {
+    console.error('PDF Generation Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to generate PDF: ' + (error.message || 'Unknown error')
+    });
+  }
 });

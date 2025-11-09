@@ -11,7 +11,8 @@ import {
   FiFileText,
   FiBarChart,
   FiDollarSign,
-  FiUserPlus
+  FiUserPlus,
+  FiPackage
 } from 'react-icons/fi';
 
 export const Sidebar: React.FC = () => {
@@ -26,6 +27,7 @@ export const Sidebar: React.FC = () => {
 
   // Admin/PM navigation items
   const adminPmNavigation = [
+    { name: 'Products', to: '/products', icon: FiPackage },
     { name: 'Sales Orders', to: '/sales-orders', icon: FiShoppingCart },
     { name: 'Purchases', to: '/purchases', icon: FiTruck },
     { name: 'Expenses', to: '/expenses', icon: FiCreditCard },

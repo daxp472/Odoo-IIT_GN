@@ -37,6 +37,60 @@ interface Project {
 }
 
 /**
+ * Get dashboard stats
+ */
+export const getStats = asyncHandler(async (req: AuthRequest, res: Response) => {
+  try {
+    // Get total projects count
+    const { count: totalProjects } = await supabase
+      .from('projects')
+      .select('*', { count: 'exact' });
+
+    // Get total revenue from paid invoices
+    const { data: invoiceData } = await supabase
+      .from('invoices')
+      .select('total_amount')
+      .eq('status', 'paid');
+
+    const totalRevenue = invoiceData?.reduce((sum: number, invoice: any) => sum + (invoice.total_amount || 0), 0) || 0;
+
+    // Get total costs from approved expenses and paid purchases
+    const { data: expenseData } = await supabase
+      .from('expenses')
+      .select('amount')
+      .eq('approved', true);
+
+    const { data: purchaseData } = await supabase
+      .from('purchases')
+      .select('amount')
+      .in('status', ['paid']);
+
+    const totalExpenses = expenseData?.reduce((sum: number, expense: any) => sum + (expense.amount || 0), 0) || 0;
+    const totalPurchases = purchaseData?.reduce((sum: number, purchase: any) => sum + (purchase.amount || 0), 0) || 0;
+    const totalCosts = totalExpenses + totalPurchases;
+
+    // Calculate profit
+    const totalProfit = totalRevenue - totalCosts;
+
+    res.json({
+      success: true,
+      stats: {
+        totalProjects: totalProjects || 0,
+        totalRevenue: totalRevenue,
+        totalExpenses: totalCosts,
+        totalProfit: totalProfit
+      }
+    });
+  } catch (error) {
+    console.error('Dashboard stats error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch dashboard stats'
+    });
+  }
+});
+
+/**
  * Get dashboard overview
  */
 export const getOverview = asyncHandler(async (req: AuthRequest, res: Response) => {

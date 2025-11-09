@@ -4,7 +4,8 @@ import {
   getInvoiceById, 
   createInvoice, 
   updateInvoice, 
-  deleteInvoice 
+  deleteInvoice,
+  generateInvoicePDF
 } from '../controllers/invoice.controller';
 import { verifyToken } from '../middleware/auth.middleware';
 import { isAdminOrPM } from '../middleware/rbac.middleware';
@@ -117,5 +118,28 @@ router.put('/:id', verifyToken, isAdminOrPM, updateInvoice);
  *         description: Invoice deleted successfully
  */
 router.delete('/:id', verifyToken, isAdminOrPM, deleteInvoice);
+
+/**
+ * @swagger
+ * /api/invoices/{id}/pdf:
+ *   get:
+ *     tags:
+ *       - Invoices
+ *     summary: Generate PDF for invoice
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: PDF generated successfully
+ *       404:
+ *         description: Invoice not found
+ */
+router.get('/:id/pdf', verifyToken, isAdminOrPM, generateInvoicePDF);
 
 export default router;

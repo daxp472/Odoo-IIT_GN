@@ -11,7 +11,7 @@
   
   **OneFlow** is a comprehensive project management and billing solution that streamlines the entire business workflow from initial planning to final invoicing.
   
-  [Live Demo](https://demo.oneflow.example.com) • 
+  [Live Demo](https://youtu.be/RmpK2KSEHxQ) • 
   [Documentation](#-documentation) • 
   [Features](#-key-features) • 
   [Installation](#-getting-started)
@@ -21,7 +21,7 @@
 
 Check out our comprehensive demo to see OneFlow in action:
 
-[![OneFlow Demo Video](https://img.youtube.com/vi/YOUR_VIDEO_ID_HERE/maxresdefault.jpg)](https://www.youtube.com/watch?v=YOUR_VIDEO_ID_HERE)
+[![OneFlow Demo Video](https://img.youtube.com/vi/YOUR_VIDEO_ID_HERE/maxresdefault.jpg)](https://youtu.be/RmpK2KSEHxQ)
 
 *Click the image above to watch the full demo video showcasing all features of OneFlow.*
 

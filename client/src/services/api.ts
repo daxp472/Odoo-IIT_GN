@@ -184,6 +184,22 @@ export const dashboardAPI = {
     });
     
     return response.json();
+  },
+  
+  getOverview: async () => {
+    const response = await fetch(`${API_BASE_URL}/dashboard/overview`, {
+      headers: getAuthHeaders(),
+    });
+    
+    return response.json();
+  },
+  
+  getFinancials: async () => {
+    const response = await fetch(`${API_BASE_URL}/dashboard/financials`, {
+      headers: getAuthHeaders(),
+    });
+    
+    return response.json();
   }
 };
 

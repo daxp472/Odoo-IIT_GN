@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { dashboardAPI, roleRequestsAPI } from '../../services/api';
 import { StatsCards } from '../widgets/StatsCards';
 import { RevenueChart } from '../widgets/RevenueChart';
@@ -15,7 +15,7 @@ interface DashboardStats {
 interface RoleRequest {
   id: string;
   user_id: string;
-  current_user_role: string;
+  current_role: string;
   requested_role: string;
   status: string;
   reason?: string;
@@ -39,34 +39,48 @@ export const AdminDashboard: React.FC = () => {
   
   const [roleRequests, setRoleRequests] = useState<RoleRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch dashboard overview
-        const overviewResponse = await dashboardAPI.getOverview();
-        if (overviewResponse.success) {
-          setDashboardStats(overviewResponse.overview);
-        }
-        
-        // Fetch role requests
-        const requestsResponse = await roleRequestsAPI.getAll();
-        if (requestsResponse.success) {
-          setRoleRequests(requestsResponse.role_requests || []);
-        }
-      } catch (error) {
-        console.error('Failed to fetch dashboard data:', error);
-      } finally {
+  const fetchData = async () => {
+    try {
+      // Fetch dashboard overview
+      const overviewResponse = await dashboardAPI.getOverview();
+      if (overviewResponse.success) {
+        setDashboardStats(overviewResponse.overview);
+      }
+      
+      // Fetch role requests
+      const requestsResponse = await roleRequestsAPI.getAll();
+      if (requestsResponse.success) {
+        setRoleRequests(requestsResponse.role_requests || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error);
+    } finally {
+      if (loading) {
         setLoading(false);
       }
-    };
+    }
+  };
 
+  useEffect(() => {
+    // Initial fetch
     fetchData();
+    
+    // Set up polling for real-time updates (every 30 seconds)
+    intervalRef.current = setInterval(fetchData, 30000);
+    
+    // Clean up interval on component unmount
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
   }, []);
 
   const handleRoleRequestAction = async (id: string, status: 'approved' | 'rejected') => {
     try {
-      const response = await roleRequestsAPI.updateStatus(id, status);
+      const response = await roleRequestsAPI.update(id, { status });
       if (response.success) {
         // Refresh role requests
         const requestsResponse = await roleRequestsAPI.getAll();
@@ -108,7 +122,15 @@ export const AdminDashboard: React.FC = () => {
         <RevenueChart />
         
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Role Change Requests</h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium text-gray-900">Role Change Requests</h3>
+            <button 
+              onClick={fetchData}
+              className="text-sm text-purple-600 hover:text-purple-800"
+            >
+              Refresh
+            </button>
+          </div>
           {roleRequests.length === 0 ? (
             <p className="text-gray-500 text-center py-4">No pending role requests</p>
           ) : (
@@ -124,7 +146,7 @@ export const AdminDashboard: React.FC = () => {
                         {request.user?.email}
                       </p>
                       <p className="text-sm mt-1">
-                        Requesting change from <span className="font-medium">{request.current_user_role}</span> to <span className="font-medium">{request.requested_role}</span>
+                        Requesting change from <span className="font-medium">{request.current_role}</span> to <span className="font-medium">{request.requested_role}</span>
                       </p>
                       {request.reason && (
                         <p className="text-sm text-gray-600 mt-2">

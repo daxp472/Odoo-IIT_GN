@@ -6,7 +6,7 @@ import { roleRequestsAPI } from '../services/api';
 interface RoleRequest {
   id: string;
   user_id: string;
-  current_user_role: string;
+  current_role: string;
   requested_role: string;
   status: string;
   reason?: string;
@@ -194,7 +194,7 @@ export const SettingsPage: React.FC = () => {
                               {request.user?.email}
                             </p>
                             <p className="text-sm mt-1">
-                              Requesting change from <span className="font-medium">{request.current_user_role}</span> to <span className="font-medium">{request.requested_role}</span>
+                              Requesting change from <span className="font-medium">{request.current_role}</span> to <span className="font-medium">{request.requested_role}</span>
                             </p>
                             {request.reason && (
                               <p className="text-sm text-gray-600 mt-2">

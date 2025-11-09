@@ -1,75 +1,107 @@
-# OneFlow - Plan to Bill in One Place
+<div align="center">
+  <img src="https://user-images.githubusercontent.com/placeholder-logo.png" alt="OneFlow Logo" width="120" />
+  
+  # OneFlow - Plan to Bill in One Place
+  
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+  [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green)](https://nodejs.org/)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-Strict%20Mode-blue)](https://www.typescriptlang.org/)
+  [![React](https://img.shields.io/badge/React-18%2B-blue)](https://reactjs.org/)
+  [![Supabase](https://img.shields.io/badge/Supabase-Cloud%20Backend-orange)](https://supabase.io/)
+  
+  **OneFlow** is a comprehensive project management and billing solution that streamlines the entire business workflow from initial planning to final invoicing.
+  
+  [Live Demo](https://demo.oneflow.example.com) • 
+  [Documentation](#-documentation) • 
+  [Features](#-key-features) • 
+  [Installation](#-getting-started)
+</div>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js](https://img.shields.io/badge/Node.js-18%2B-green)](https://nodejs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-Strict%20Mode-blue)](https://www.typescriptlang.org/)
+## 🎥 Demo Video
 
-OneFlow is a comprehensive project management and billing solution that helps businesses plan projects, track time, manage resources, and generate invoices - all in one integrated platform.
+Check out our comprehensive demo to see OneFlow in action:
 
-## 🌟 Overview
+[![OneFlow Demo Video](https://img.youtube.com/vi/YOUR_VIDEO_ID_HERE/maxresdefault.jpg)](https://www.youtube.com/watch?v=YOUR_VIDEO_ID_HERE)
 
-OneFlow streamlines the entire project lifecycle from initial planning to final billing. Built with modern web technologies, it provides a seamless experience for project managers, team members, and administrators to collaborate effectively while maintaining financial transparency.
+*Click the image above to watch the full demo video showcasing all features of OneFlow.*
+
+*Replace `YOUR_VIDEO_ID_HERE` with your actual YouTube video ID.*
+
+## 🌟 Why OneFlow?
+
+OneFlow eliminates the complexity of managing multiple tools by providing an integrated platform that connects project planning, resource allocation, time tracking, and financial management. Built for modern teams who demand efficiency and transparency.
+
+### Key Benefits:
+- **All-in-One Solution**: No more switching between 5 different tools
+- **Real-time Collaboration**: Team members stay synchronized with live updates
+- **Financial Transparency**: Track revenue, costs, and profits in real-time
+- **Role-Based Access**: Secure access control for different user types
+- **Professional Invoicing**: Generate and export invoices with one click
 
 ## 🚀 Key Features
 
-### Project & Task Management
-- **Project Dashboard**: Overview of all projects with status tracking
-- **Task Management**: Create, assign, and track tasks with due dates and priorities
-- **Progress Tracking**: Visual progress indicators and milestone tracking
-- **Resource Allocation**: Assign team members to projects and tasks
+### 📊 Project & Task Management
+- **Interactive Dashboard**: Real-time overview of all projects and metrics
+- **Advanced Task Tracking**: Assign, prioritize, and monitor task progress
+- **Visual Progress Indicators**: Gantt charts and progress bars for clear visualization
+- **Resource Planning**: Allocate team members and track utilization
 
-### Time & Expense Tracking
-- **Timesheet Management**: Log hours worked with detailed descriptions
-- **Expense Tracking**: Record project-related expenses with receipts
-- **Approval Workflows**: Manager approval for timesheets and expenses
-- **Billing Integration**: Direct linking of time and expenses to invoices
+### ⏱️ Time & Expense Tracking
+- **Timesheet Management**: Simple time logging with detailed descriptions
+- **Expense Recording**: Capture project expenses with receipt uploads
+- **Approval Workflows**: Streamlined manager approval processes
+- **Automated Billing**: Direct integration with invoicing system
 
-### Financial Management
-- **Sales Orders**: Track client orders and project commitments
-- **Purchase Orders**: Manage vendor purchases and supplier relationships
-- **Invoicing**: Generate professional invoices with PDF export
-- **Financial Analytics**: Revenue, cost, and profit tracking
+### 💰 Financial Management
+- **Sales Orders**: Track client commitments and project scopes
+- **Purchase Orders**: Manage vendor relationships and procurement
+- **Professional Invoicing**: Generate invoices with PDF export capability
+- **Financial Analytics**: Comprehensive reporting on revenue, costs, and profitability
 
-### Product Management
-- **Product Catalog**: Maintain a database of products and services
-- **Pricing Management**: Set unit prices, taxes, and currency options
+### 🛒 Product Management
+- **Product Catalog**: Maintain a centralized database of products/services
+- **Pricing Engine**: Flexible pricing with tax and currency support
 - **Inventory Tracking**: SKU and barcode management
-- **Product References**: Link products to sales, purchases, and invoices
+- **Cross-Reference**: Link products to sales, purchases, and invoices
 
-### Role-Based Access Control
+### 👥 Role-Based Access Control
 - **Admin**: Full system access and user management
 - **Project Manager**: Project creation, team management, and financial oversight
 - **Team Member**: Task execution and time tracking
-- **Role Request System**: Users can request role upgrades with admin approval
+- **Role Request System**: Self-service role upgrades with admin approval
 
-### Real-time Collaboration
-- **User Authentication**: Secure login with Supabase Auth
-- **Real-time Updates**: Live data synchronization across all users
-- **Notification System**: Status updates and workflow notifications
-- **Audit Trail**: Comprehensive logging of all system activities
+### 🔄 Real-time Collaboration
+- **Secure Authentication**: JWT-based login with Supabase Auth
+- **Live Updates**: Real-time data synchronization across all devices
+- **Notification System**: Automated alerts for important events
+- **Activity Logs**: Complete audit trail of all system activities
 
 ## 🛠️ Technology Stack
 
 ### Frontend
-- **Framework**: React 18 with TypeScript
-- **Build Tool**: Vite
-- **Styling**: Tailwind CSS
-- **State Management**: React Context API
-- **UI Components**: Custom component library
+```bash
+React 18 + TypeScript + Vite
+Tailwind CSS for styling
+React Context API for state management
+Responsive design for all devices
+```
 
 ### Backend
-- **Runtime**: Node.js (Latest LTS)
-- **Framework**: Express.js
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth + JWT
-- **API Documentation**: Swagger/OpenAPI
-- **Validation**: Zod
+```bash
+Node.js with Express.js
+Supabase (PostgreSQL) for database
+Supabase Auth for authentication
+Swagger/OpenAPI for API documentation
+Zod for data validation
+```
 
 ### Infrastructure
-- **Hosting**: Supabase Platform
-- **Storage**: Supabase Storage (for receipts and documents)
-- **Real-time**: Supabase Real-time Subscriptions
-- **Security**: JWT, CORS, Rate Limiting
+```bash
+Supabase Platform for hosting
+Supabase Storage for file management
+Supabase Real-time for live updates
+JWT, CORS, and Rate Limiting for security
+```
 
 ## 📋 Prerequisites
 
@@ -83,8 +115,8 @@ Before you begin, ensure you have the following installed:
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/daxp472/Odoo-IIT_GN.git
-cd Odoo-IIT_GN
+git clone https://github.com/your-username/oneflow.git
+cd oneflow
 ```
 
 ### 2. Setup Backend
